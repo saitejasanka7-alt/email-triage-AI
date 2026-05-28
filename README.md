@@ -57,3 +57,28 @@ Follow-up scheduling
 Lead scoring
 Team inbox support
 
+Incoming Email (Gmail)
+        ↓
+Trigger Activated
+        ↓
+AI Agent analyzes email
+        ↓
+Intent Classification
+   ├── Lead Inquiry
+   ├── Support Request
+   ├── Meeting Request
+   └── General Email
+        ↓
+AI Response Generator
+        ↓
+Approval Check (Optional)
+        ↓
+Auto Send Email
+        ↓
+Update Database (Firebase)
+        ↓
+Dashboard Analytics Update
+        ↓
+Notification Sent (User)
+
+
