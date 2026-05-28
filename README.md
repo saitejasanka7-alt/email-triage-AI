@@ -22,40 +22,33 @@ Triange-AI automates the email response workflow using AI agents. The system hel
 - Optional Google Sheets logging
 - Website/Lovable integration using n8n Webhook
 
-## Workflow
+## Workflow Access
 
-```text
-Gmail Trigger
--> Triage AI Agent
--> Generate Reply
--> Safety Check
--> Check Safety Approval
--> Send Reply
--> Log Result
+The complete n8n workflow used for Triange AI is available inside this repository.
 
+Workflow File:
 
-How It WorksA new email arrives in Gmail.
-n8n triggers the workflow.
-Triage AI Agent detects intent, priority, and summary.
-Generate Reply Agent writes a professional response.
-Safety Check Agent validates the reply.
-If approved, Gmail sends the reply automatically.
-The result can be logged to Google Sheets or shown on a website dashboard.
-Safety DesignTriange-AI does not blindly send every AI response. The workflow includes a safety approval node:
+* `TriangeAI_n8n_Workflow.json`
 
-approved = true  -> Send Reply
-approved = false -> Skip / Log for review
+This workflow contains:
 
-This helps prevent unsafe, incorrect, or unprofessional automated emails from being sent.
-Hackathon GoalThe goal of Triange-AI is to help businesses save time and improve communication speed by combining workflow automation with AI-powered email understanding and response generation.
-Future ImprovementsMulti-account Gmail support
-Better analytics dashboard
-CRM integration
-WhatsApp and Slack notifications
-Human approval dashboard
-Follow-up scheduling
-Lead scoring
-Team inbox support
+* AI Email Intent Detection
+* Automated Reply Generation
+* Reply Optimization
+* Safety Validation
+* Automated Email Sending
+* Analytics Extraction
+* Google Sheets Logging
+
+To test the workflow:
+
+1. Open n8n
+2. Click “Import Workflow”
+3. Upload the provided JSON file
+4. Configure required API credentials
+5. Run the workflow
+
+##USER FLOW DIAGRAM
 
 Incoming Email (Gmail)
         ↓
