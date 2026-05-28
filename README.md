@@ -32,3 +32,28 @@ Gmail Trigger
 -> Check Safety Approval
 -> Send Reply
 -> Log Result
+
+
+How It WorksA new email arrives in Gmail.
+n8n triggers the workflow.
+Triage AI Agent detects intent, priority, and summary.
+Generate Reply Agent writes a professional response.
+Safety Check Agent validates the reply.
+If approved, Gmail sends the reply automatically.
+The result can be logged to Google Sheets or shown on a website dashboard.
+Safety DesignTriange-AI does not blindly send every AI response. The workflow includes a safety approval node:
+
+approved = true  -> Send Reply
+approved = false -> Skip / Log for review
+
+This helps prevent unsafe, incorrect, or unprofessional automated emails from being sent.
+Hackathon GoalThe goal of Triange-AI is to help businesses save time and improve communication speed by combining workflow automation with AI-powered email understanding and response generation.
+Future ImprovementsMulti-account Gmail support
+Better analytics dashboard
+CRM integration
+WhatsApp and Slack notifications
+Human approval dashboard
+Follow-up scheduling
+Lead scoring
+Team inbox support
+
