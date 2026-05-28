@@ -1,0 +1,1064 @@
+{
+  "name": "Email-Triange AI (Hackathon(OpenAI x OUTSKILL))",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "readStatus": "unread"
+        },
+        "options": {}
+      },
+      "id": "afaa57da-032b-4fdb-b34c-d9544609f761",
+      "name": "New Email Received",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -16,
+        660
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "yC7nrblKCodhXJBM",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze this email and return only JSON.\n\nEmail data:\n{{ JSON.stringify($json) }}\n\nReturn only this JSON format:\n{\n  \"intent\": \"Lead\",\n  \"priority\": \"high\",\n  \"summary\": \"short summary\"\n}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an email triage agent. Return ONLY valid JSON. No markdown, no code block, no explanation. Use double quotes only.",
+          "maxIterations": 2
+        }
+      },
+      "id": "4a9e165f-35af-453a-aae8-2f5d84a1580b",
+      "name": "Triange AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        240,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $(\"New Email Received\").item.json.from.text }}",
+        "subject": "=Re: {{ $(\"New Email Received\").item.json.subject }}",
+        "emailType": "text",
+        "message": "={{ $(\"Optimize Reply\").item.json.final_reply }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "524dba5c-f246-4d5b-b985-07df5792878b",
+      "name": "Send Reply",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2272,
+        536
+      ],
+      "webhookId": "f75764dc-2b7e-448a-b168-572e7217c2d7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "yC7nrblKCodhXJBM",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"intent\": \"Lead\",\n  \"priority\": \"high\",\n  \"summary\": \"Customer interested in product demo\"\n}",
+        "autoFix": true
+      },
+      "id": "71bac7ce-cf8c-4a6c-a4d5-693cdeda1f6f",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        336,
+        884
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Return ONLY valid JSON:\n{\n  \"should_send\": true,\n  \"subject\": \"Re: original subject\",\n  \"reply_body\": \"professional email reply\",\n  \"follow_up_needed\": false\n}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a professional email assistant. Generate human-like, contextual replies based on email intent. Be concise, helpful, and conversion-focused for leads.",
+          "maxIterations": 5
+        }
+      },
+      "id": "e71eede9-5543-4d9c-8a56-e6b11465ad21",
+      "name": "Generate Reply",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        736,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"should_send\": true,\n  \"subject\": \"Re: Your email\",\n  \"reply_body\": \"Thanks for reaching out. I will help you with this.\",\n  \"follow_up_needed\": false\n}",
+        "autoFix": true
+      },
+      "id": "7b97c7ec-8ac7-456a-89bb-832c858e3f8f",
+      "name": "Reply Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        832,
+        884
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Decide if this email reply is safe to send automatically.\n\nReply:\n{{ $json.output.final_reply || $json.output.reply_body || $json.final_reply || $json.reply_body }}\n\nReturn ONLY valid JSON:\n{\n  \"approved\": true,\n  \"reason\": \"Safe to send\"\n}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a safety validator for automated email responses. Your job is to prevent unsafe, unprofessional, or risky content from being sent. Be strict but fair.",
+          "maxIterations": 5
+        }
+      },
+      "id": "9047d75d-5e0c-4873-89a8-0f578dfe5db2",
+      "name": "Safety Check",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1696,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"approved\": true,\n  \"reason\": \"Safe to send\"\n}"
+      },
+      "id": "c86cb8ac-11f7-4f12-8a6e-249f2d45b141",
+      "name": "Safety Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1832,
+        884
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Extract analytics from this email interaction:\n\nIntent: {{ $(\"Triange AI Agent\").item.json.intent }}\nPriority: {{ $(\"Triange AI Agent\").item.json.priority }}\nSummary: {{ $(\"Triange AI Agent\").item.json.summary }}\nEmail type: incoming + outgoing\nResponse sent: {{ $(\"Optimize Reply\").item.json.final_reply }}\nResponse tone: {{ $(\"Generate Reply\").item.json.tone }}\nConfidence: {{ $(\"Optimize Reply\").item.json.confidence }}\nFollow-up action: {{ $(\"Optimize Reply\").item.json.follow_up_action }}\n\nReturn JSON with:\n- category: the business category (e.g., Sales, Support, Partnership, Event, Marketing)\n- engagement_type: type of interaction (e.g., Inbound Lead, Support Request, Meeting Scheduling, Follow-up)\n- estimated_priority_score: 1-10 score based on urgency and business value",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an analytics extraction agent. Analyze email interactions and provide structured insights for business intelligence and reporting. Be objective and data-driven.",
+          "maxIterations": 5
+        }
+      },
+      "id": "e50a709f-d3eb-43f2-af4d-a7557bd57ed8",
+      "name": "Extract Analytics",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2496,
+        536
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": {
+          "category": "Lead",
+          "engagement_type": "Inbound Sales Inquiry",
+          "estimated_priority_score": 8
+        }
+      },
+      "id": "4c4d7010-3e3d-4166-b49a-35a343d26234",
+      "name": "Analytics Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2632,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.approved }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equal"
+              },
+              "id": "6a6f197a-44cc-4fb4-89b0-4e61c127429a"
+            },
+            {
+              "id": "d0ae3251-291e-4d3d-a4b3-28703978274c",
+              "leftValue": "=Value 1: {{$json.output.approved}}",
+              "rightValue": "Condition:Boolean is true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "29f6dcb3-f3f9-4482-96be-f3bb94039f14",
+      "name": "Check Safety Approval",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2048,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "action",
+              "value": "sent",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "intent",
+              "value": "={{ $(\"Triange AI Agent\").item.json.intent }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "priority",
+              "value": "={{ $(\"Triange AI Agent\").item.json.priority }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "summary",
+              "value": "={{ $(\"Triange AI Agent\").item.json.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "email_from",
+              "value": "={{ $(\"New Email Received\").item.json.from.text }}",
+              "type": "string"
+            },
+            {
+              "id": "7",
+              "name": "email_subject",
+              "value": "={{ $(\"New Email Received\").item.json.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "8",
+              "name": "original_reply",
+              "value": "={{ $(\"Generate Reply\").item.json.reply }}",
+              "type": "string"
+            },
+            {
+              "id": "9",
+              "name": "optimized_reply",
+              "value": "={{ $(\"Optimize Reply\").item.json.final_reply }}",
+              "type": "string"
+            },
+            {
+              "id": "10",
+              "name": "tone",
+              "value": "={{ $(\"Generate Reply\").item.json.tone }}",
+              "type": "string"
+            },
+            {
+              "id": "11",
+              "name": "confidence",
+              "value": "={{ $(\"Optimize Reply\").item.json.confidence }}",
+              "type": "number"
+            },
+            {
+              "id": "12",
+              "name": "follow_up_action",
+              "value": "={{ $(\"Optimize Reply\").item.json.follow_up_action }}",
+              "type": "string"
+            },
+            {
+              "id": "13",
+              "name": "category",
+              "value": "={{ $(\"Extract Analytics\").item.json.category }}",
+              "type": "string"
+            },
+            {
+              "id": "14",
+              "name": "engagement_type",
+              "value": "={{ $(\"Extract Analytics\").item.json.engagement_type }}",
+              "type": "string"
+            },
+            {
+              "id": "15",
+              "name": "priority_score",
+              "value": "={{ $(\"Extract Analytics\").item.json.estimated_priority_score }}",
+              "type": "number"
+            },
+            {
+              "id": "16",
+              "name": "should_send",
+              "value": "={{ $(\"Generate Reply\").item.json.should_send }}",
+              "type": "boolean"
+            },
+            {
+              "id": "17",
+              "name": "safety_approved",
+              "value": "={{ $(\"Safety Check\").item.json.approved }}",
+              "type": "boolean"
+            },
+            {
+              "id": "18",
+              "name": "safety_reason",
+              "value": "={{ $(\"Safety Check\").item.json.reason }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c0258370-f17e-438d-9e04-dfa8bf3bff9a",
+      "name": "Prepare Sent Log",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2848,
+        536
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "action",
+              "value": "skipped",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "intent",
+              "value": "={{ $(\"Triange AI Agent\").item.json.intent }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "priority",
+              "value": "={{ $(\"Triange AI Agent\").item.json.priority }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "summary",
+              "value": "={{ $(\"Triange AI Agent\").item.json.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "email_from",
+              "value": "={{ $(\"New Email Received\").item.json.from.text }}",
+              "type": "string"
+            },
+            {
+              "id": "7",
+              "name": "email_subject",
+              "value": "={{ $(\"New Email Received\").item.json.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "8",
+              "name": "should_send",
+              "value": "={{ $(\"Generate Reply\").item.json.should_send }}",
+              "type": "boolean"
+            },
+            {
+              "id": "9",
+              "name": "safety_approved",
+              "value": "={{ $(\"Safety Check\").item.json.approved ?? \"not_checked\" }}",
+              "type": "string"
+            },
+            {
+              "id": "10",
+              "name": "safety_reason",
+              "value": "={{ $(\"Safety Check\").item.json.reason ?? \"not_checked\" }}",
+              "type": "string"
+            },
+            {
+              "id": "11",
+              "name": "original_reply",
+              "value": "={{ $(\"Generate Reply\").item.json.reply ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "12",
+              "name": "optimized_reply",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "13",
+              "name": "tone",
+              "value": "={{ $(\"Generate Reply\").item.json.tone ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "14",
+              "name": "confidence",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "15",
+              "name": "follow_up_action",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "16",
+              "name": "category",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "17",
+              "name": "engagement_type",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "18",
+              "name": "priority_score",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5b123421-011f-4fdf-841f-8a26f81654c4",
+      "name": "Prepare Skipped Log",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2848,
+        784
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Optimize this email reply.\n\nInput reply:\n{{ $json.output.reply_body }}\n\nReturn ONLY valid JSON.\nDo not return markdown.\nDo not return text before or after JSON.\nDo not return an object directly.\n\nUse exactly this format:\n{\n  \"final_reply\": \"optimized professional email reply\",\n  \"follow_up_action\": \"schedule_follow_up\",\n  \"confidence\": 98\n}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an elite email optimization agent. Your job is to refine email replies for maximum conversion, satisfaction, and professionalism while maintaining a human-like tone. Suggest strategic follow-up actions based on intent and priority.",
+          "maxIterations": 5
+        }
+      },
+      "id": "ebad7f1e-9040-4787-8c0b-295565676999",
+      "name": "Optimize Reply",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1232,
+        660
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"final_reply\": \"Optimized professional email reply\",\n  \"follow_up_action\": \"schedule_follow_up\",\n  \"confidence\": 98\n}",
+        "autoFix": true
+      },
+      "id": "7653f431-e576-4968-be7f-dbf41dbef82d",
+      "name": "Optimizer Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1328,
+        884
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        884
+      ],
+      "id": "0da7c585-13fd-4c38-9302-64c18048f4ae",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "3VGMLrE7Mb6T8JmW",
+          "name": "Google Gemini(PaLM) Api account 10"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        1092
+      ],
+      "id": "a6bebeb6-7fd0-4244-bafa-b802715929b9",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ix1FxSYPZ9gQIlbu",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        704,
+        884
+      ],
+      "id": "1bd84df9-a5d6-4557-b186-6f421bc79842",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ix1FxSYPZ9gQIlbu",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1704,
+        884
+      ],
+      "id": "1a5f0078-0eb2-4d15-a654-c64d96fa6c2a",
+      "name": "Google Gemini Chat Model4",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ix1FxSYPZ9gQIlbu",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        2504,
+        760
+      ],
+      "id": "e938de0f-f00d-4e72-bbea-c8539835816b",
+      "name": "Google Gemini Chat Model5",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ix1FxSYPZ9gQIlbu",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        912,
+        1092
+      ],
+      "id": "838aa34c-9f8c-49b2-aa32-e7be9476a5fe",
+      "name": "Google Gemini Chat Model6",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "gU3devOjRm2BK813",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        884
+      ],
+      "id": "217c559b-f7d1-472f-8edc-000e1f04bb32",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "gU3devOjRm2BK813",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1408,
+        1092
+      ],
+      "id": "9738425a-3c41-4bea-8d3d-aa7f1c7daa0f",
+      "name": "Google Gemini Chat Model7",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ZTqObxzngL8OLK40",
+          "name": "Google Gemini(PaLM) Api account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "19r2fkMtIPTQORYs4hYjXmvDQOhS5xuK070lblU5p4WA",
+          "mode": "list",
+          "cachedResultName": "Email Logs Triange AI",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19r2fkMtIPTQORYs4hYjXmvDQOhS5xuK070lblU5p4WA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/19r2fkMtIPTQORYs4hYjXmvDQOhS5xuK070lblU5p4WA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "=timestamp = {{$now}}",
+            "Status": "=status = {{$json.status}}",
+            "Intent": "=intent = {{$json.intent}}",
+            "Priority": "=priority = {{$json.priority}}",
+            "Subject": "=subject = {{$json.subject}}",
+            "Reply": "=reply = {{$json.reply}}",
+            "Reason": "=reason = {{$json.reason}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Intent",
+              "displayName": "Intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reply",
+              "displayName": "Reply",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3072,
+        660
+      ],
+      "id": "133a3df0-b552-4626-8678-309e56d0340b",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "nWKFqoODE2xoDvEV",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "New Email Received": {
+      "main": [
+        [
+          {
+            "node": "Triange AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Triange AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Generate Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Triange AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Reply": {
+      "main": [
+        [
+          {
+            "node": "Optimize Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate Reply",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Safety Check": {
+      "main": [
+        [
+          {
+            "node": "Check Safety Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Safety Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Safety Check",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reply": {
+      "main": [
+        [
+          {
+            "node": "Extract Analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analytics Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Extract Analytics",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Safety Approval": {
+      "main": [
+        [
+          {
+            "node": "Send Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Skipped Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Analytics": {
+      "main": [
+        [
+          {
+            "node": "Prepare Sent Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Sent Log": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Skipped Log": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Optimize Reply": {
+      "main": [
+        [
+          {
+            "node": "Safety Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Optimizer Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Optimize Reply",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Triange AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Reply",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Safety Check",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Analytics",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model6": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Reply Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Optimize Reply",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model7": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Optimizer Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f2604d89-6471-456e-9c40-62755966df07",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "13ac7c18d3ec0f6ef40399c7360d6a0748d9a3bd0651d0d46974f7d3b1cb622e"
+  },
+  "id": "RSWa0VuNeCDFbtat",
+  "tags": []
+}
