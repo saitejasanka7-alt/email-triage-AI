@@ -48,7 +48,7 @@ To test the workflow:
 4. Configure required API credentials
 5. Run the workflow
 
-##USER FLOW DIAGRAM
+## USER FLOW DIAGRAM
 
 Incoming Email (Gmail)
         ↓
